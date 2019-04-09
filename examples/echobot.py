@@ -6,16 +6,12 @@ import pymumble_py3
 import time
 from pymumble_py3.callbacks import PYMUMBLE_CLBK_SOUNDRECEIVED as PCS
 
-
-global m
-
 pwd =""
 server = "localhost"
 nick = "Bob"
 
 def sound_received_handler(user, soundchunk):
     mumble.sound_output.add_sound(soundchunk.pcm)
-
 
 mumble = pymumble_py3.Mumble(server, nick, password=pwd)
 mumble.callbacks.set_callback(PCS, sound_received_handler)

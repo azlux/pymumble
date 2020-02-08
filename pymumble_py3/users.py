@@ -1,23 +1,34 @@
 # -*- coding: utf-8 -*-
-from .constants import *
-from .errors import TextTooLongError, ImageTooBigError
+import typing
 from threading import Lock
-from . import soundqueue
-from . import messages
-from . import mumble_pb2
 
-class Users(dict):
+from . import messages, mumble_pb2, soundqueue
+from .callbacks import CallBacks
+from .constants import *
+from .errors import ImageTooBigError, TextTooLongError
+
+if typing.TYPE_CHECKING:
+    from .mumble import Mumble
+
+ProtoMessage = typing.Any
+
+
+class Users(typing.Dict[int, "User"]):
     """Object that stores and update all connected users"""
 
-    def __init__(self, mumble_object, callbacks):
+    def __init__(self, mumble_object: "Mumble", callbacks: CallBacks):
         self.mumble_object = mumble_object
         self.callbacks = callbacks
 
-        self.myself = None  # user object of the pymumble thread itself
-        self.myself_session = None  # session number of the pymumble thread itself
+        self.myself: typing.Optional[
+            "User"
+        ] = None  # user object of the pymumble thread itself
+        self.myself_session: typing.Optional[
+            int
+        ] = None  # session number of the pymumble thread itself
         self.lock = Lock()
 
-    def update(self, message):
+    def update(self, message: ProtoMessage) -> None:  # type: ignore
         """Update a user information, based on the incoming message"""
         self.lock.acquire()
 
@@ -32,7 +43,7 @@ class Users(dict):
 
         self.lock.release()
 
-    def remove(self, message):
+    def remove(self, message: ProtoMessage) -> None:
         """Remove a user object based on server info"""
         self.lock.acquire()
 
@@ -43,29 +54,31 @@ class Users(dict):
 
         self.lock.release()
 
-    def set_myself(self, session):
+    def set_myself(self, session: int) -> None:
         """Set the "myself" user"""
         self.myself_session = session
         if session in self:
             self.myself = self[session]
 
-    def count(self):
+    def count(self) -> int:
         """Return the count of connected users"""
         return len(self)
 
 
-class User(dict):
+class User(typing.Dict[str, typing.Any]):
     """Object that store one user"""
 
-    def __init__(self, mumble_object, message):
+    def __init__(self, mumble_object: "Mumble", message: ProtoMessage):
         self.mumble_object = mumble_object
         self["session"] = message.session
         self["channel_id"] = 0
         self.update(message)
 
-        self.sound = soundqueue.SoundQueue(self.mumble_object)  # will hold this user incoming audio
+        self.sound = soundqueue.SoundQueue(
+            self.mumble_object
+        )  # will hold this user incoming audio
 
-    def update(self, message):
+    def update(self, message: ProtoMessage) -> typing.Dict[str, typing.Any]:  # type: ignore
         """Update user state, based on an incoming message"""
         actions = dict()
 
@@ -90,7 +103,9 @@ class User(dict):
 
         return actions  # return a dict, useful for the callback functions
 
-    def update_field(self, name, field):
+    def update_field(
+        self, name: str, field: typing.Any
+    ) -> typing.Dict[str, typing.Any]:
         """Update one state value for a user"""
         actions = dict()
         if name not in self or self[name] != field:
@@ -99,14 +114,16 @@ class User(dict):
 
         return actions
 
-    def get_property(self, property):
+    def get_property(self, property: str) -> typing.Any:
         if property in self:
             return self[property]
         else:
             return None
 
-    def mute(self):
+    def mute(self) -> None:
         """Mute a user"""
+        assert self.mumble_object.users.myself_session is not None
+
         params = {"session": self["session"]}
 
         if self["session"] == self.mumble_object.users.myself_session:
@@ -117,8 +134,10 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unmute(self):
+    def unmute(self) -> None:
         """Unmute a user"""
+        assert self.mumble_object.users.myself_session is not None
+
         params = {"session": self["session"]}
 
         if self["session"] == self.mumble_object.users.myself_session:
@@ -129,8 +148,10 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def deafen(self):
+    def deafen(self) -> None:
         """Deafen a user"""
+        assert self.mumble_object.users.myself_session is not None
+
         params = {"session": self["session"]}
 
         if self["session"] == self.mumble_object.users.myself_session:
@@ -141,8 +162,10 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def undeafen(self):
+    def undeafen(self) -> None:
         """Undeafen a user"""
+        assert self.mumble_object.users.myself_session is not None
+
         params = {"session": self["session"]}
 
         if self["session"] == self.mumble_object.users.myself_session:
@@ -153,63 +176,70 @@ class User(dict):
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def suppress(self):
+    def suppress(self) -> None:
         """Disable a user"""
-        params = {"session": self["session"],
-                  "suppress": True}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "suppress": True}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unsuppress(self):
+    def unsuppress(self) -> None:
         """Enable a user"""
-        params = {"session": self["session"],
-                  "suppress": False}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "suppress": False}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def recording(self):
+    def recording(self) -> None:
         """Set the user as recording"""
-        params = {"session": self["session"],
-                  "recording": True}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "recording": True}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def unrecording(self):
+    def unrecording(self) -> None:
         """Set the user as not recording"""
-        params = {"session": self["session"],
-                  "recording": False}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "recording": False}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def comment(self, comment):
+    def comment(self, comment: str) -> None:
         """Set the user comment"""
-        params = {"session": self["session"],
-                  "comment": comment}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "comment": comment}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def texture(self, texture):
+    def texture(self, texture: bytes) -> None:
         """Set the user texture"""
-        params = {"session": self["session"],
-                  "texture": texture}
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "texture": texture}
 
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
-    
-    def register(self):
+
+    def register(self) -> None:
         """Register the user (mostly for myself)"""
-        params = {"session": self["session"],
-                  "user_id": 0}
- 
+        assert self.mumble_object.users.myself_session is not None
+
+        params = {"session": self["session"], "user_id": 0}
+
         cmd = messages.ModUserState(self.mumble_object.users.myself_session, params)
         self.mumble_object.execute_command(cmd)
 
-    def move_in(self, channel_id, token=None):
+    def move_in(self, channel_id: int, token: typing.Optional[str] = None) -> None:
         if token:
             authenticate = mumble_pb2.Authenticate()
             authenticate.username = self.mumble_object.user
@@ -218,13 +248,16 @@ class User(dict):
             authenticate.tokens.extend([token])
             authenticate.opus = True
             self.mumble_object.Log.debug("sending: authenticate: %s", authenticate)
-            self.mumble_object.send_message(PYMUMBLE_MSG_TYPES_AUTHENTICATE, authenticate)
+            self.mumble_object.send_message(
+                PYMUMBLE_MSG_TYPES_AUTHENTICATE, authenticate
+            )
 
         session = self.mumble_object.users.myself_session
+        assert session is not None
         cmd = messages.MoveCmd(session, channel_id)
         self.mumble_object.execute_command(cmd)
 
-    def send_text_message(self, message):
+    def send_text_message(self, message: str) -> None:
         """Send a text message to the user."""
 
         # TODO: This check should be done inside execute_command()

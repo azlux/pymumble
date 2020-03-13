@@ -3,9 +3,8 @@ import time
 from threading import Lock
 from collections import deque
 
-import opuslib
-
 from .constants import *
+from . import opus
 
 
 class SoundQueue:
@@ -27,7 +26,7 @@ class SoundQueue:
         # to be sure, create every supported decoders for all users
         # sometime, clients still use a codec for a while after server request another...
         self.decoders = {
-                    PYMUMBLE_AUDIO_TYPE_OPUS: opuslib.Decoder(PYMUMBLE_SAMPLERATE, 1)
+                    PYMUMBLE_AUDIO_TYPE_OPUS: opus.Decoder(PYMUMBLE_SAMPLERATE, 1)
         }
 
     def set_receive_sound(self, value):

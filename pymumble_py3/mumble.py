@@ -495,9 +495,9 @@ class Mumble(threading.Thread):
 
                     self.callbacks(PYMUMBLE_CLBK_SOUNDRECEIVED, self.users[session.value], newsound)
 
-                    sequence.value += int(round(newsound.duration / 1000 * 10))  # add 1 sequence per 10ms of audio
+                    #sequence.value += int(round(newsound.duration / 1000 * 10))  # add 1 sequence per 10ms of audio
 
-                    self.Log.debug("Audio frame : time:%f last:%s, size:%i, uncompressed:%i, type:%i, target:%i", time.time(), str(terminator), size, newsound.size, type, target)
+                    #self.Log.debug("Audio frame : time:%f last:%s, size:%i, uncompressed:%i, type:%i, target:%i", time.time(), str(terminator), size, newsound.size, type, target)
                 except CodecNotSupportedError as msg:
                     print(msg)
                 except KeyError:  # sound received after user removed

@@ -113,7 +113,7 @@ class SoundOutput:
             ))
 
             if self.mumble_object.udp_active:
-                self.mumble_object.send_udp(udp_packet)
+                self.mumble_object.send_packet_udp(udp_packet)
             else:
                 tcp_packet = struct.pack("!HL", PYMUMBLE_MSG_TYPES_UDPTUNNEL, len(udp_packet)) + udp_packet  # encapsulate in tcp tunnel
 

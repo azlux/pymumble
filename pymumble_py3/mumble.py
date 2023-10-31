@@ -333,7 +333,7 @@ class Mumble(threading.Thread):
         except socket.error:
             pass
 
-        receive_buffer = self.ocb.decrypt(encrypted_buffer, len(encrypted_buffer))
+        receive_buffer = self.ocb.decrypt(encrypted_buffer)
 
         while len(receive_buffer) >= 6:  # header is present (type + length)
             self.Log.debug("read control connection")

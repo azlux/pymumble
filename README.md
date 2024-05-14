@@ -1,3 +1,25 @@
+# Important Announcement
+Hello everyone,
+I don't know what to do with this project.
+
+First, let's look at the problems and possible solutions:
+1. I don't use mumble anymore, working on a bot you don't use leads to a lack of testing and motivation.
+2. I don't code like I used to, my hobbies have changed, I maintain stuff I still use, but no real coding anymore.
+3. pymumble isn't asynchronous. Many workarounds/patches were used to avoid freezing. Even now the latency increase with connexion time because of this.
+
+Even if the asyncio needs a complete rewrite, I'm looking for maintainers.
+
+Mumble teams is working on a mumble librairy, I hope it will replace this projet.
+Until that time, I don't archive this project.
+
+It was really fun, thank you all for your support!
+
+See you in space, cowboy.
+
+-- Azlux
+
+-----
+
 PYMUMBLE python library
 =======================
 

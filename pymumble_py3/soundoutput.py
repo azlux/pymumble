@@ -4,7 +4,6 @@ from time import time
 import struct
 import threading
 import socket
-import opuslib
 
 from .constants import *
 from .errors import CodecNotSupportedError
@@ -124,7 +123,8 @@ class SoundOutput:
     def set_audio_per_packet(self, audio_per_packet):
         """set the length of an audio packet (in ms)"""
         self.audio_per_packet = audio_per_packet
-        self.create_encoder()
+        if self.encoder is not None:
+            self.create_encoder()
 
     def get_bandwidth(self):
         """get the configured bandwidth for the audio output"""
@@ -158,6 +158,9 @@ class SoundOutput:
         if len(pcm) % 2 != 0:  # check that the data is align on 16 bits
             raise Exception("pcm data must be 16 bits")
 
+        if self.encoder is None:
+            self.create_encoder()
+
         samples = int(self.encoder_framesize * PYMUMBLE_SAMPLERATE * 2 * self.channels)  # number of samples in an encoder frame
 
         self.lock.acquire()
@@ -182,7 +185,8 @@ class SoundOutput:
     def set_default_codec(self, codecversion):
         """Set the default codec to be used to send packets"""
         self.codec = codecversion
-        self.create_encoder()
+        if self.encoder is not None:
+            self.create_encoder()
 
     def create_encoder(self):
         """create the encoder instance, and set related constants"""
@@ -190,6 +194,8 @@ class SoundOutput:
             return ()
 
         if self.codec.opus:
+            # Text-only clients must not require the native audio library.
+            import opuslib
             self.encoder = opuslib.Encoder(PYMUMBLE_SAMPLERATE, self.channels, self.opus_profile)
             self.encoder_framesize = self.audio_per_packet
             self.codec_type = PYMUMBLE_AUDIO_TYPE_OPUS
